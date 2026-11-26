@@ -1,0 +1,42 @@
+# Compiled JavaScript files
+lib/
+
+# Node modules
+node_modules/
+
+# Local environment files
+*.local
+
+# IDE
+.idea/
+*.iml
+
+# Debug logs
+firebase-debug.log
+firebase-debug.*.log
+
+# Test coverage
+coverage/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Service account keys (NEVER commit these!)
+*-service-account.json
+service-account*.json
+credentials*.json
+
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+
+
+
+
+
+
+
+
+
+
+

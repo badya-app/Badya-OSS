@@ -1,0 +1,41 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"badya-f1af2","appId":"1:67590761416:android:7e7928971666fb3c1a6efd","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"badya-f1af2","configurations":{"android":"1:67590761416:android:7e7928971666fb3c1a6efd","ios":"1:67590761416:ios:a47744facb453c7f1a6efd","macos":"1:67590761416:ios:4f13de37d869acca1a6efd","web":"1:67590761416:web:0b3f472c5cb12bb61a6efd"}}}}},"storage":{"rules":"storage.rules"},"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"hosting": {
+    "site": "badya-web",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|mp4)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      }
+    ],
+    "rewrites": [],
+    "redirects": []
+  },"functions":[{"source":"functions","codebase":"default","ignore":["node_modules",".git","firebase-debug.log","firebase-debug.*.log","*.local"],"predeploy":["npm --prefix \"$RESOURCE_DIR\" run lint","npm --prefix \"$RESOURCE_DIR\" run build"]}]}

@@ -1,0 +1,51 @@
+# ============================================================================
+# Badya AI Service — Core Dependencies
+# ============================================================================
+# Run: pip install -r requirements.txt
+# Python 3.14 / virtualenv: AI/.venv
+#
+# NOTE: Packages used only by RecommendationService/ are NOT listed here.
+# See RecommendationService/requirements.txt for those.
+# ============================================================================
+
+# --- Google ADK (Agent Development Kit) ---
+google-adk[gcp,otel-gcp]==2.8.0
+google-genai                     # Google AI Python SDK (types, genai client)
+
+# --- LLM Routing & Model Access ---
+litellm==1.78.7
+
+# --- FastAPI Server ---
+fastapi
+uvicorn
+python-multipart                 # Required by FastAPI for form/file uploads
+python-dotenv==1.2.1
+
+# --- Networking & HTTP ---
+requests
+httpx                            # Used in voiceclient.py for session creation
+websockets                       # Used in voiceclient.py for WebSocket comm
+
+# --- Audio ---
+PyAudio==0.2.14                  # Voice I/O
+
+# --- Video & Image Processing ---
+moviepy==2.2.1                   # Video composition (video_story_agent)
+opencv-python-headless==4.12.0.88  # cv2 — frame extraction, video processing
+Pillow                           # PIL — image manipulation, thumbnail gen
+numpy                            # Numerical operations (video/image pipelines)
+
+# --- Data Validation ---
+pydantic                         # BaseModel, Field (agent schemas)
+
+# --- Content Import & Recommendation Dependencies ---
+firebase-admin
+youtube-transcript-api
+yt-dlp
+pymupdf
+trafilatura
+readability-lxml
+beautifulsoup4
+lxml
+aiofiles
+

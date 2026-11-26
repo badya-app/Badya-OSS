@@ -1,0 +1,293 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if coin/credit fields are being modified
+    function isCoinFieldModified() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['coin_balance', 'coins_earned_total', 'coins_spent_total']);
+    }
+
+    // Users can read/write their own user document and subcollections.
+    // Authenticated users can read any public user profile (powers leaderboard, search, social).
+    match /users/{userId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        resource.data.is_public == true ||
+        !('is_public' in resource.data)
+      );
+      allow write: if request.auth.uid == userId;
+      
+      // For updates, block modifications to sensitive coin fields
+      allow update: if request.auth.uid == userId && !isCoinFieldModified();
+
+      // Subcollection for custom topics
+      match /custom_topics/{customTopicId} {
+        allow read, write: if request.auth.uid == userId;
+        // Validate required fields for custom topics on create/update
+        allow create: if request.auth.uid == userId &&
+                         request.resource.data.keys().hasAll(['id', 'title', 'description', 'color', 'is_public', 'created_at', 'language', 'section_id']) &&
+                         request.resource.data.title is string && request.resource.data.title.size() > 0 &&
+                         request.resource.data.language is string && request.resource.data.language.size() > 0;
+        allow update: if request.auth.uid == userId &&
+                         request.resource.data.title is string && request.resource.data.title.size() > 0 &&
+                         request.resource.data.language is string && request.resource.data.language.size() > 0;
+      }
+
+      // Subcollection for user-defined sections
+      match /sections/{sectionId} {
+        allow read, write: if request.auth.uid == userId;
+        // Validate required fields for sections on create/update
+        allow create: if request.auth.uid == userId &&
+                         request.resource.data.keys().hasAll(['id', 'title', 'order_index']) &&
+                         request.resource.data.title is string && request.resource.data.title.size() > 0;
+        allow update: if request.auth.uid == userId &&
+                         request.resource.data.title is string && request.resource.data.title.size() > 0;
+      }
+
+      // Subcollection for user progress and scores (replaces old topics structure)
+      match /progress/{topicId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for weak words (existing)
+      match /weak_words/{wordId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for topic words (per language)
+      match /topics/{topicId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for AI analysis history
+      match /analysis_history/{analysisId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+
+      // Subcollection for import sections
+      match /import_sections/{sectionId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for imports
+      match /imports/{importId} {
+        allow read, write: if request.auth.uid == userId;
+
+        // Sub-subcollection for lessons within an import
+        match /lessons/{lessonId} {
+          allow read, write: if request.auth.uid == userId;
+        }
+      }
+
+
+      // Subcollection for notification preferences
+      match /preferences/{preferenceId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for FCM tokens (push notification registration)
+      match /fcmTokens/{tokenId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for daily activity tracking (streak, dashboard)
+      match /daily_activity/{dateId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for users this user has blocked (block list)
+      // Only the blocker can read/write their own block list, so blocked
+      // users never know they were blocked.
+      match /blocked/{blockedUserId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for words the user marked as strange/difficult
+      match /strange_words/{language} {
+        allow read, write: if request.auth.uid == userId;
+      }
+
+      // Subcollection for transactions (buying lessons, coins, bonuses)
+      // Users can read their own transactions and create spend/bonus entries.
+      // Updates and deletes remain blocked to preserve audit trail integrity.
+      match /transactions/{transactionId} {
+        allow read: if request.auth.uid == userId;
+        allow create: if request.auth.uid == userId &&
+          request.resource.data.type in ['spend', 'bonus'] &&
+          request.resource.data.amount is number &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.description is string &&
+          request.resource.data.created_at is timestamp;
+        allow update, delete: if false;
+      }
+    }
+
+    // Unified user_content collection (new schema)
+    // Contains all content: user imports, AI generations, suggestions, public content
+    match /user_content/{contentId} {
+      // Anyone authenticated can read public content or suggestions
+      allow read: if request.auth != null && (
+        resource.data.is_public == true ||
+        resource.data.is_suggestion == true ||
+        resource.data.user_id == request.auth.uid
+      );
+
+      // Create: authenticated users can create their own content OR system suggestions
+      allow create: if request.auth != null && (
+        // Normal user content — owned by the creator
+        (request.resource.data.keys().hasAll(['type', 'title', 'user_id']) &&
+         request.resource.data.user_id == request.auth.uid &&
+         request.resource.data.title is string && request.resource.data.title.size() > 0)
+        ||
+        // System suggestions (user_id null, created during population)
+        (request.resource.data.is_suggestion == true &&
+         request.resource.data.user_id == null &&
+         request.resource.data.keys().hasAll(['type', 'title']) &&
+         request.resource.data.title is string && request.resource.data.title.size() > 0)
+      );
+
+      // Update: only owner can update their content, or any auth user can update suggestions
+      // Suggestion updates must preserve is_suggestion and keep user_id null to prevent hijacking
+      allow update: if request.auth != null && (
+        // Owner updates their own content
+        (resource.data.user_id == request.auth.uid &&
+         request.resource.data.user_id == request.auth.uid)
+        ||
+        // System suggestions — must preserve suggestion status and stay unowned
+        (resource.data.is_suggestion == true &&
+         request.resource.data.is_suggestion == true &&
+         request.resource.data.user_id == null)
+      );
+
+      // Delete: only owner can delete their content (suggestions cannot be deleted)
+      allow delete: if request.auth != null &&
+        resource.data.user_id == request.auth.uid;
+
+      // --- Subcollections ---
+
+      // Helper: read the parent user_content document for access checks
+      function contentOwner() {
+        return get(/databases/$(database)/documents/user_content/$(contentId)).data.user_id;
+      }
+      function contentIsPublic() {
+        return get(/databases/$(database)/documents/user_content/$(contentId)).data.is_public == true;
+      }
+      function contentIsSuggestion() {
+        return get(/databases/$(database)/documents/user_content/$(contentId)).data.is_suggestion == true;
+      }
+
+      // Source data subcollection: user_content/{contentId}/source/{sourceDoc}
+      // Stores raw text, transcript JSON, and metadata for re-segmentation.
+      match /source/{sourceDoc} {
+        allow read: if request.auth != null && (
+          contentIsPublic() || contentIsSuggestion() || contentOwner() == request.auth.uid
+        );
+        allow create, update: if request.auth != null &&
+          contentOwner() == request.auth.uid;
+        allow delete: if request.auth != null &&
+          contentOwner() == request.auth.uid;
+      }
+
+      // Segments subcollection: user_content/{contentId}/segments/{segmentId}
+      // Stores segmented lesson data for the new segmentation system.
+      match /segments/{segmentId} {
+        allow read: if request.auth != null && (
+          contentIsPublic() || contentIsSuggestion() || contentOwner() == request.auth.uid
+        );
+        allow create, update: if request.auth != null &&
+          contentOwner() == request.auth.uid;
+        allow delete: if request.auth != null &&
+          contentOwner() == request.auth.uid;
+      }
+
+      // Progress subcollection: user_content/{contentId}/progress/{progressId}
+      // Stores per-segment learning progress (last_position, completed, etc.)
+      // Written by ContentService.updateLessonProgress()
+      match /progress/{progressId} {
+        allow read: if request.auth != null && (
+          contentIsPublic() || contentIsSuggestion() || contentOwner() == request.auth.uid
+        );
+        allow create, update: if request.auth != null &&
+          contentOwner() == request.auth.uid;
+        allow delete: if request.auth != null &&
+          contentOwner() == request.auth.uid;
+      }
+    }
+
+
+    // Curated topics collection (read-only for all authenticated users)
+    // Initial population is done via the Admin SDK / Firebase Console — no
+    // client create allowed (previously any authenticated user could create).
+    match /curated_topics/{curatedTopicId} {
+      allow read: if request.auth != null;
+      allow create: if false;
+      // No updates or deletes allowed
+      allow update, delete: if false;
+    }
+
+    // Aggregated tag-counts document (Optimization 3.4).
+    // Single document at `metadata/tag_counts` with a `counts.<tag>` map of
+    // integers. Maintained by the client via atomic FieldValue.increment /
+    // txn.update. Any authenticated user may read (it powers tag discovery)
+    // and any authenticated user may write (the aggregate is global, not
+    // per-user). Delete is disabled to protect the aggregate from being
+    // wiped by a misbehaving client — a rebuild script can re-create it.
+    match /metadata/{metadataDoc} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null;
+      allow delete: if false;
+    }
+    // Notification messages collection
+    // Read now requires auth — previously ANYONE (unauthenticated) could read
+    // every message. The only client reader (NotificationPoolService) is
+    // behind the login gate.
+    // Writes are locked: no client code writes here (messages are populated
+    // via Firebase Console / Admin SDK, which bypass these rules). Previously
+    // any signed-in user could post messages (spam vector).
+    match /notification_messages/{messageId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // User / content reports (moderation)
+    // Writes are locked entirely: reports are only created by the
+    // `submitReport` Cloud Function (Admin SDK, which bypasses these rules),
+    // so the duplicate-pending and 5/day-cap checks can't be bypassed by a
+    // modified client. Reads stay open to the reporter's own reports (the app
+    // uses them for the client-side fast-path dedupe/counter). Triage happens
+    // via the Firebase Console / Admin SDK.
+    match /reports/{reportId} {
+      allow read: if request.auth != null &&
+        resource.data.reporter_uid == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    // Top-level feedback collection (in-app feedback / issue reports)
+    // Moved from users/{userId}/issue_reports so all feedback is in one
+    // place for admins to triage. Each doc stores user_id for attribution.
+    // Create: authenticated users can create their own feedback with the
+    // required shape and bounded string sizes. Read: only the author can
+    // read their own submissions. Updates/deletes are blocked to preserve
+    // the audit trail — the app only ever creates these docs.
+    match /feedback/{feedbackId} {
+      allow read: if request.auth != null &&
+        resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasAll(['user_id', 'category', 'description', 'user_email', 'user_display_name', 'timestamp']) &&
+        request.resource.data.user_id == request.auth.uid &&
+        request.resource.data.category is string &&
+        request.resource.data.category.size() > 0 &&
+        request.resource.data.category.size() <= 100 &&
+        request.resource.data.description is string &&
+        request.resource.data.description.size() <= 2000 &&
+        request.resource.data.user_email is string &&
+        request.resource.data.user_email.size() <= 254 &&
+        request.resource.data.user_display_name is string &&
+        request.resource.data.user_display_name.size() <= 100 &&
+        request.resource.data.timestamp is timestamp;
+      allow update, delete: if false;
+    }
+  }
+}

@@ -1,0 +1,262 @@
+{
+    "indexes": [
+        {
+            "collectionGroup": "curated_topics",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "category_order",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "topic_index",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "sections",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "language",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "order_index",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "user_id",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "user_id",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "assigned_languages",
+                    "arrayConfig": "CONTAINS"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "user_id",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "type",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_suggestion",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_suggestion",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "assigned_languages",
+                    "arrayConfig": "CONTAINS"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_suggestion",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "type",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_public",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_public",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "assigned_languages",
+                    "arrayConfig": "CONTAINS"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_public",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "type",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "recommendation_clicks",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "source",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "timestamp",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "user_content",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "is_public",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "assigned_languages",
+                    "arrayConfig": "CONTAINS"
+                },
+                {
+                    "fieldPath": "popularity_score",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "reports",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "reporter_uid",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "reported_uid",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "reports",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "reporter_uid",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "created_at",
+                    "order": "ASCENDING"
+                }
+            ]
+        }
+    ],
+    "fieldOverrides": [
+        {
+            "collectionGroup": "users",
+            "fieldPath": "subscription.store_subscription_id",
+            "indexes": [
+                {
+                    "order": "ASCENDING",
+                    "queryScope": "COLLECTION"
+                },
+                {
+                    "order": "DESCENDING",
+                    "queryScope": "COLLECTION"
+                }
+            ]
+        }
+    ]
+}

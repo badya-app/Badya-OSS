@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Prevents the resource shrinker (R8 -shrinkResources) from removing resources
+  that are referenced only by runtime string lookup rather than compiled code.
+
+  flutter_local_notifications resolves its notification icon via a runtime
+  string ('@drawable/ic_notification'), which resource shrinking cannot trace.
+  Without this, release builds would lose the notification icon.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />

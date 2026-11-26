@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+backend.log
+out.txt
+
+# Environment
+.env
+.env.local
+*.local
+
+# Node (if any)
+node_modules/
+
+# Documentation
+README.md
+docs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Sensitive keys and secrets
+serviceAccountKey.json
+*.json
+*.sh
+.adk/
+temp_uploads/

@@ -1,0 +1,67 @@
+name: Auto Tag on Merge
+
+on:
+  pull_request:
+    types: [ closed ]
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: bump
+        run: |
+          set -euo pipefail
+          # Determine bump type from PR labels: major | minor | patch (default patch)
+          LABELS=$(jq -r '.pull_request.labels[].name' < "$GITHUB_EVENT_PATH" || true)
+          BUMP="patch"
+          echo "$LABELS" | grep -qi "major" && BUMP="major"
+          echo "$LABELS" | grep -qi "minor" && BUMP="minor"
+          echo "$LABELS" | grep -qi "patch" && BUMP="patch" || true
+
+          # Read latest tag (supports refs like v1.2.3 or 1.2.3)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          CLEAN_TAG=${LAST_TAG#v}
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CLEAN_TAG"
+          MAJOR=${MAJOR:-0}
+          MINOR=${MINOR:-0}
+          PATCH=${PATCH:-0}
+
+          case "$BUMP" in
+            major)
+              MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor)
+              MINOR=$((MINOR+1)); PATCH=0 ;;
+            *)
+              PATCH=$((PATCH+1)) ;;
+          esac
+
+          NEXT_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "bump=$BUMP" >> $GITHUB_OUTPUT
+          echo "last=$LAST_TAG" >> $GITHUB_OUTPUT
+          echo "next=$NEXT_TAG" >> $GITHUB_OUTPUT
+          echo "Next tag: $NEXT_TAG"
+
+      - name: Create tag and release notes
+        env:
+          NEXT_TAG: ${{ steps.bump.outputs.next }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$NEXT_TAG" -m "Release $NEXT_TAG"
+          git push origin "$NEXT_TAG"
+
+

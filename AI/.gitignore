@@ -1,0 +1,10 @@
+__pycache__/
+# Ignore .env as both a file and a directory
+.env
+.env/
+sd-turbo-local/
+.adk/
+temp_uploads/
+serviceAccountKey.json
+deploy_to_cloud_run.sh
+

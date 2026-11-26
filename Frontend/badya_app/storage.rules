@@ -1,0 +1,75 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Option A — full per-user isolation (review issue #5)
+    // ─────────────────────────────────────────────────────────────────────
+    // New uploads are written by FirebaseStorageService as
+    // `{folder}/{uid}/{fileName}`, so every folder is now owner-scoped:
+    //   • write → OWNER ONLY (`request.auth.uid == userId`)
+    //   • read  → any authenticated user (files are displayed on public
+    //             profiles / in the shared library)
+    // Cross-user overwrite/delete of other users' files is now impossible.
+    //
+    // Legacy flat-path files (e.g. `profile_photos/{uuid}.jpg` uploaded
+    // before this change) are covered by read-only `{legacyFile}` rules:
+    // still readable so existing photos/thumbnails keep working, but no
+    // longer writable — no new files may be created on flat paths.
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ── Profile photos ─────────────────────────────────────────────────
+    match /profile_photos/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Legacy flat profile photos (pre-Option A) — readable, not writable.
+    match /profile_photos/{legacyFile} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Content thumbnails (user + AI generated) ───────────────────────
+    match /content_thumbnails/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Legacy flat content thumbnails — readable, not writable.
+    match /content_thumbnails/{legacyFile} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── AI-generated thumbnails uploaded by the app (adk_service) ──────
+    match /ai_thumbnails/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Legacy flat AI thumbnails — readable, not writable.
+    match /ai_thumbnails/{legacyFile} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Imported article images uploaded by the AI backend
+    // (AI/firebase/storage.py) and displayed inside imported lessons.
+    // Backend uploads use the Admin SDK (which bypasses these rules), and no
+    // client code writes here — so client WRITES are denied entirely.
+    match /imports/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // GDPR data exports — uid-scoped; restrict to the OWNER only so the
+    // full PII export is never readable/writable by other users.
+    match /exports/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default: deny everything not matched above (unknown folders, direct
+    // bucket-root writes, unauthenticated access anywhere else).
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
